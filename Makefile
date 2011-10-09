@@ -36,7 +36,7 @@ CFLAGS_COMMON	= -c -O0 -v
 CFLAGS32	= $(CFLAGS_COMMON) $(CFLAGS_KERNEL) $(MACH32)
 CFLAGS64	= $(CFLAGS_COMMON) $(CFLAGS_KERNEL) $(MACH64)
 
-LDFLAGS		= -dy -r -N"drv/blkdev"
+LDFLAGS		= -dy -r
 
 MKDIR		= mkdir
 CP		= cp

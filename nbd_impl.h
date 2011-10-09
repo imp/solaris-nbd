@@ -27,7 +27,6 @@ extern "C" {
 
 typedef struct {
 	uint64_t	target;
-	bd_handle_t     bdh;	/* block dev handle */
 	int		id;
 	ksocket_t	sock;
 } nbd_state_t;

@@ -19,16 +19,17 @@
  */
 
 #include <sys/types.h>
-#include <sys/blkdev.h>
+#include <sys/ksynch.h>
 #include <sys/cmn_err.h>
 #include <sys/note.h>
 #include <sys/conf.h>
 #include <sys/devops.h>
 #include <sys/modctl.h>
 #include <sys/stat.h>
-#include <sys/ksocket.h>
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
+/* sys/ksocket.h relies on sys/sunddi.h */
+#include <sys/ksocket.h>
 
 #include "nbd.h"
 #include "nbd_impl.h"
@@ -38,110 +39,6 @@
 #define	NBD_IS_CTL_INSTANCE(x)	(x == NBD_CTL_INSTANCE)
 
 static nbd_ctl_state_t csp;
-
-static ddi_dma_attr_t nbd_dma_attr = {
-	.dma_attr_version       = DMA_ATTR_V0,
-	.dma_attr_addr_lo       = 0x0000000000000000,
-	.dma_attr_addr_hi       = 0xFFFFFFFFFFFFFFFF,
-	.dma_attr_count_max     = 1,
-	.dma_attr_align         = 4096,
-	.dma_attr_burstsizes    = 0,
-	.dma_attr_minxfer       = 512,                  /* 1 sector min */
-	.dma_attr_maxxfer       = 512 * 2048,           /* 1 MB max */
-	.dma_attr_seg           = 512 * 2048 - 1,
-	.dma_attr_sgllen        = -1,
-	.dma_attr_granular      = 512,
-	.dma_attr_flags         = 0
-};
-
-
-static void
-nbd_drive_info(void *pp, bd_drive_t *bdp)
-{
-	nbd_state_t	*sp	= (nbd_state_t *)pp;
-
-	bdp->d_qsize		= 1;
-	bdp->d_maxxfer		= 1024 * 1024;
-	bdp->d_removable	= B_FALSE;
-	bdp->d_hotpluggable	= B_TRUE;
-	bdp->d_target		= sp->target;
-#if defined(LUN_SUPPORT)
-	bdp->d_lun		= sp->target;
-#endif
-}
-
-
-static int
-nbd_media_info(void *pp, bd_media_t *bmp)
-{
-	nbd_state_t	*sp	= (nbd_state_t *)pp;
-
-	bmp->m_nblks	= 1024 * 1024 * 1024;
-	bmp->m_blksize	= DEV_BSIZE;
-	bmp->m_readonly	= B_FALSE;
-
-	return (0);
-}
-
-
-static int
-nbd_devid_init(void *pp, dev_info_t *dip, ddi_devid_t *didp)
-{
-	nbd_state_t	*sp	= (nbd_state_t *)pp;
-	
-	return (DDI_FAILURE);
-}
-
-
-static int
-nbd_sync_cache(void *pp, bd_xfer_t *xp)
-{
-	nbd_state_t	*sp	= (nbd_state_t *)pp;
-	
-	return (EIO);
-}
-
-
-static int
-nbd_bd_read(void *pp, bd_xfer_t *xp)
-{
-	nbd_state_t	*sp	= (nbd_state_t *)pp;
-	
-	return (EIO);
-}
-
-
-static int
-nbd_bd_write(void *pp, bd_xfer_t *xp)
-{
-	nbd_state_t	*sp	= (nbd_state_t *)pp;
-	
-	return (EIO);
-}
-
-
-#if defined(DUMP_SUPPORT)
-/* Not supported */
-static int
-nbd_bd_dump(void *private, bd_xfer_t *xp)
-{
-	return (0);
-}
-#endif
-
-
-static bd_ops_t nbd_bd_ops = {
-	.o_version	= BD_OPS_VERSION_0,
-	.o_drive_info	= nbd_drive_info,
-	.o_media_info	= nbd_media_info,
-	.o_devid_init	= nbd_devid_init,
-	.o_sync_cache	= nbd_sync_cache,
-	.o_read		= nbd_bd_read,
-	.o_write	= nbd_bd_write,
-#if defined(DUMP_SUPPORT)
-	.o_dump		= NULL
-#endif
-};
 
 
 static int
@@ -198,17 +95,6 @@ nbd_attach_dev(int instance)
 	cmn_err(CE_CONT, "nbd_attach_dev(), instance=%d\n", instance);
 
 	sp = nbd_instance_to_state(instance);
-	sp->bdh = bd_alloc_handle(sp, &nbd_bd_ops, &nbd_dma_attr, KM_SLEEP);
-	if (sp->bdh == NULL) {
-		nbd_free_dev(instance);
-		return (DDI_FAILURE);
-	}
-
-	rc = bd_attach_handle(csp.dip, sp->bdh);
-	if (rc != DDI_SUCCESS) {
-		bd_free_handle(sp->bdh);
-		nbd_free_dev(instance);
-	}
 
 	return (rc);
 }
@@ -227,11 +113,6 @@ nbd_detach_dev(int instance)
 
 	cmn_err(CE_CONT, "nbd_detach_dev(), instance=%d\n", instance);
 
-	rc = bd_detach_handle(sp->bdh);
-	if (rc != DDI_SUCCESS) {
-		return (rc);
-	}
-	bd_free_handle(sp->bdh);
 	nbd_free_dev(instance);
 	return (DDI_SUCCESS);
 }
@@ -462,12 +343,7 @@ _init(void)
 {
 	int error;
 
-	bd_mod_init(&nbd_devops);
-
 	error = mod_install(&nbd_modlinkage);
-	if (error != 0) {
-		bd_mod_fini(&nbd_devops);
-	}
 	return (error);
 }
 
@@ -477,9 +353,6 @@ _fini(void)
 	int error;
 
 	error = mod_remove(&nbd_modlinkage);
-	if (error == 0) {
-		bd_mod_fini(&nbd_devops);
-	}
 	return (error);
 }
 
