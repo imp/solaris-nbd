@@ -99,7 +99,7 @@ nbd_attach_dev(int instance, char *name)
 
 	sp->name = refstr_alloc(name);
 
-	rc = ddi_create_minor_node(csp.dip, NBD_INSTANCE_NAME(csp, instance),
+	rc = ddi_create_minor_node(csp.dip, NBD_INSTANCE_NAME(sp),
 	    S_IFCHR, instance, DDI_PSEUDO, 0);
 
 	if (rc != DDI_SUCCESS) {
@@ -124,7 +124,7 @@ nbd_detach_dev(int instance)
 
 	cmn_err(CE_CONT, "nbd_detach_dev(%d)\n", instance);
 
-	ddi_remove_minor_node(csp.dip, NBD_INSTANCE_NAME(csp, instance));
+	ddi_remove_minor_node(csp.dip, NBD_INSTANCE_NAME(sp));
 	refstr_rele(sp->name);
 	nbd_free_dev(instance);
 	return (DDI_SUCCESS);
@@ -170,7 +170,7 @@ nbd_ioctl(dev_t dev, int cmd, intptr_t arg, int mode,
 	cred_t *credp, int *rvalp)
 {
 	int	instance = getminor(dev);
-	int	rc;
+	int	rc = 0;
 
 	cmn_err(CE_CONT, "nbd_ioctl(), instance=%d\n", instance);
 
@@ -284,7 +284,7 @@ nbd_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
 		}
 	}
 
-	ddi_remove_minor_node(dip, 0);
+	ddi_remove_minor_node(dip, NULL);
 
 	csp.dip = NULL;
 

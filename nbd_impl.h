@@ -38,7 +38,7 @@ typedef struct {
 } nbd_ctl_state_t;
 
 #define	NBD_INSTANCE2STATE(s, i)	(s.nbds[i])
-#define NBD_INSTANCE_NAME(s, i)		(char *)refstr_value(s.nbds[i]->name)
+#define NBD_INSTANCE_NAME(sp)		(char *)refstr_value(sp->name)
 
 #ifdef __cplusplus
 }

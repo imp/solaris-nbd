@@ -42,13 +42,13 @@ main(int argc, char **argv)
 	}
 
 	if (argc < 2) {
-		printf("Attaching NBD device 0\n");
+		printf("Attaching NBD device 1\n");
 		if (ioctl(ctl, NBD_ATTACH_DEV) == -1) {
 			perror("nbadm attach dev");
 			exit(EXIT_FAILURE);
 		}
 	} else {
-		printf("Detaching NBD device 0\n");
+		printf("Detaching NBD device 1\n");
 		if (ioctl(ctl, NBD_DETACH_DEV) == -1) {
 			perror("nbadm detach dev");
 			exit(EXIT_FAILURE);
