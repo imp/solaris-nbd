@@ -27,6 +27,7 @@ extern "C" {
 
 typedef struct {
 	uint64_t	target;
+	refstr_t	*name;
 	int		id;
 	ksocket_t	sock;
 } nbd_state_t;
@@ -37,6 +38,7 @@ typedef struct {
 } nbd_ctl_state_t;
 
 #define	NBD_INSTANCE2STATE(s, i)	(s.nbds[i])
+#define NBD_INSTANCE_NAME(s, i)		(char *)refstr_value(s.nbds[i]->name)
 
 #ifdef __cplusplus
 }

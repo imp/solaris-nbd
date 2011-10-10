@@ -26,6 +26,7 @@
 #include <sys/devops.h>
 #include <sys/modctl.h>
 #include <sys/stat.h>
+#include <sys/refstr.h>
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
 /* sys/ksocket.h relies on sys/sunddi.h */
@@ -56,7 +57,7 @@ nbd_alloc_dev(int instance)
 		    instance, csp.nbds[instance]);
 		rc = DDI_SUCCESS;
 	}
-	
+
 	return (rc);
 }
 
@@ -82,7 +83,7 @@ nbd_instance_to_state(int instance)
 
 
 static int
-nbd_attach_dev(int instance)
+nbd_attach_dev(int instance, char *name)
 {
 	int		rc;
 	nbd_state_t	*sp;
@@ -92,9 +93,19 @@ nbd_attach_dev(int instance)
 		return (rc);
 	}
 
-	cmn_err(CE_CONT, "nbd_attach_dev(), instance=%d\n", instance);
+	cmn_err(CE_CONT, "nbd_attach_dev(%d, %s)\n", instance, name);
 
 	sp = nbd_instance_to_state(instance);
+
+	sp->name = refstr_alloc(name);
+
+	rc = ddi_create_minor_node(csp.dip, NBD_INSTANCE_NAME(csp, instance),
+	    S_IFCHR, instance, DDI_PSEUDO, 0);
+
+	if (rc != DDI_SUCCESS) {
+		refstr_rele(sp->name);
+		nbd_free_dev(instance);
+	}
 
 	return (rc);
 }
@@ -111,8 +122,10 @@ nbd_detach_dev(int instance)
 		return (DDI_FAILURE);
 	}
 
-	cmn_err(CE_CONT, "nbd_detach_dev(), instance=%d\n", instance);
+	cmn_err(CE_CONT, "nbd_detach_dev(%d)\n", instance);
 
+	ddi_remove_minor_node(csp.dip, NBD_INSTANCE_NAME(csp, instance));
+	refstr_rele(sp->name);
 	nbd_free_dev(instance);
 	return (DDI_SUCCESS);
 }
@@ -167,12 +180,12 @@ nbd_ioctl(dev_t dev, int cmd, intptr_t arg, int mode,
 
 	switch (cmd) {
 	case NBD_ATTACH_DEV:
-		if (nbd_attach_dev(0) != DDI_SUCCESS) {
+		if (nbd_attach_dev(1, "nbd1") != DDI_SUCCESS) {
 			rc = EINVAL;
 		}
 		break;
 	case NBD_DETACH_DEV:
-		if (nbd_detach_dev(0) != DDI_SUCCESS) {
+		if (nbd_detach_dev(1) != DDI_SUCCESS) {
 			rc = EINVAL;
 		}
 		break;
