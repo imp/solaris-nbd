@@ -198,8 +198,9 @@ static int
 nbd_ioctl(dev_t dev, int cmd, intptr_t arg, int mode,
 	cred_t *credp, int *rvalp)
 {
-	int	instance = getminor(dev);
-	int	rc = 0;
+	nbd_cmd_t	nbdcmd;
+	int		instance = getminor(dev);
+	int		rc = 0;
 
 	cmn_err(CE_CONT, "nbd_ioctl(), instance=%d\n", instance);
 
@@ -207,9 +208,13 @@ nbd_ioctl(dev_t dev, int cmd, intptr_t arg, int mode,
 		return (EINVAL);
 	}
 
+	if (ddi_copyin((void *)arg, &nbdcmd, sizeof (nbd_cmd_t), mode) == -1) {
+		return (EFAULT);
+	}
+
 	switch (cmd) {
 	case NBD_ATTACH_DEV:
-		if (nbd_attach_dev(1, "nbd1") != DDI_SUCCESS) {
+		if (nbd_attach_dev(1, nbdcmd.name) != DDI_SUCCESS) {
 			rc = EINVAL;
 		}
 		break;

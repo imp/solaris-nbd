@@ -32,7 +32,8 @@
 int
 main(int argc, char **argv)
 {
-	int	ctl;
+	int		ctl;
+	nbd_cmd_t	cmd;
 
 	ctl = open(NBDCTL_DEV, O_RDWR);
 
@@ -41,15 +42,17 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
+	snprintf(cmd.name, 1024, "nbd-disk");
+
 	if (argc < 2) {
-		printf("Attaching NBD device 1\n");
-		if (ioctl(ctl, NBD_ATTACH_DEV) == -1) {
+		printf("Attaching NBD device 1 (%s)\n", cmd.name);
+		if (ioctl(ctl, NBD_ATTACH_DEV, &cmd) == -1) {
 			perror("nbadm attach dev");
 			exit(EXIT_FAILURE);
 		}
 	} else {
-		printf("Detaching NBD device 1\n");
-		if (ioctl(ctl, NBD_DETACH_DEV) == -1) {
+		printf("Detaching NBD device 1 (%s)\n", cmd.name);
+		if (ioctl(ctl, NBD_DETACH_DEV, &cmd) == -1) {
 			perror("nbadm detach dev");
 			exit(EXIT_FAILURE);
 		}

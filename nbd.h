@@ -21,6 +21,8 @@
  * Solaris NBD driver interface definitions.
  */
 
+#include <sys/socket.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -32,6 +34,11 @@ extern "C" {
 
 #define	NBD_ATTACH_DEV	0x123456
 #define	NBD_DETACH_DEV	0x123457
+
+typedef struct {
+	char			name[1024];
+	struct sockaddr_in	sin;
+} nbd_cmd_t;
 
 #ifdef __cplusplus
 }
