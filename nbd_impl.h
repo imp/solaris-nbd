@@ -25,11 +25,22 @@
 extern "C" {
 #endif
 
+typedef union nbd_sockaddr {
+	struct sockaddr         sin;
+	struct sockaddr_in      sin4;
+	struct sockaddr_in6     sin6;
+} nbd_sockaddr_t;
+
+#define SIZEOF_SOCKADDR(so)	((so)->sa_family == AF_INET ? \
+	sizeof (struct sockaddr_in) : sizeof (struct sockaddr_in6))
+
+
 typedef struct {
 	uint64_t	target;
 	refstr_t	*name;
 	int		id;
 	ksocket_t	sock;
+	nbd_sockaddr_t	addr;
 } nbd_state_t;
 
 typedef struct {

@@ -30,6 +30,7 @@
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
 /* sys/ksocket.h relies on sys/sunddi.h */
+#include <sys/socket.h>
 #include <sys/ksocket.h>
 
 #include "nbd.h"
@@ -40,6 +41,34 @@
 #define	NBD_IS_CTL_INSTANCE(x)	(x == NBD_CTL_INSTANCE)
 
 static nbd_ctl_state_t csp;
+
+
+static int
+nbd_connect(nbd_state_t *sp)
+{
+	int	rc = 0;
+
+	rc = ksocket_socket(&sp->sock, AF_INET, SOCK_STREAM, 0, KSOCKET_SLEEP, CRED());
+	if (rc != 0) {
+		return (DDI_FAILURE);
+	}
+
+	rc = ksocket_connect(sp->sock, &sp->addr.sin, SIZEOF_SOCKADDR(&sp->addr.sin), CRED());
+
+	if (rc != 0) {
+		ksocket_close(sp->sock, CRED());
+		return (DDI_FAILURE);
+	}
+
+	return (DDI_SUCCESS);
+}
+
+
+static void
+nbd_disconnect(nbd_state_t *sp)
+{
+	ksocket_close(sp->sock, CRED());
+}
 
 
 static int
