@@ -112,7 +112,7 @@ nbd_instance_to_state(int instance)
 
 
 static int
-nbd_attach_dev(int instance, char *name)
+nbd_attach_dev(int instance, char *name, nbd_sockaddr_t *addr)
 {
 	int		rc;
 	nbd_state_t	*sp;
@@ -127,6 +127,7 @@ nbd_attach_dev(int instance, char *name)
 	sp = nbd_instance_to_state(instance);
 
 	sp->name = refstr_alloc(name);
+	bcopy(addr, &sp->addr, sizeof (nbd_sockaddr_t));
 
 	rc = ddi_create_minor_node(csp.dip, NBD_INSTANCE_NAME(sp),
 	    S_IFCHR, instance, DDI_PSEUDO, 0);
@@ -199,6 +200,7 @@ nbd_ioctl(dev_t dev, int cmd, intptr_t arg, int mode,
 	cred_t *credp, int *rvalp)
 {
 	nbd_cmd_t	nbdcmd;
+	nbd_sockaddr_t	addr;
 	int		instance = getminor(dev);
 	int		rc = 0;
 
@@ -214,7 +216,21 @@ nbd_ioctl(dev_t dev, int cmd, intptr_t arg, int mode,
 
 	switch (cmd) {
 	case NBD_ATTACH_DEV:
-		if (nbd_attach_dev(1, nbdcmd.name) != DDI_SUCCESS) {
+		bzero(&addr, sizeof (addr));
+		if (nbdcmd.addr != NULL) {
+			if (ddi_copyin((void *)nbdcmd.addr, &addr,
+			    sizeof (struct sockaddr), mode) == -1) {
+				return (EFAULT);
+			}
+			if (ddi_copyin((void *)nbdcmd.addr, &addr,
+			    SIZEOF_SOCKADDR(&addr.sin), mode) == -1) {
+				return (EFAULT);
+			}
+		} else {
+			return (EINVAL);
+		}
+
+		if (nbd_attach_dev(1, nbdcmd.name, &addr) != DDI_SUCCESS) {
 			rc = EINVAL;
 		}
 		break;

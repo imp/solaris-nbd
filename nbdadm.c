@@ -159,7 +159,7 @@ main(int argc, char **argv)
 		printf("Listing\n");
 	} else if (attach) {
 		snprintf(cmd.name, 1024, name);
-		cmd.sin = server;
+		cmd.addr = server;
 		printf("Attaching NBD device 1 (%s)\n", cmd.name);
 		if (ioctl(ctl, NBD_ATTACH_DEV, &cmd) == -1) {
 			perror("nbadm attach dev");
