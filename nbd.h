@@ -37,7 +37,7 @@ extern "C" {
 
 typedef struct {
 	char			name[1024];
-	struct sockaddr_in	sin;
+	struct sockaddr		*sin;
 } nbd_cmd_t;
 
 #ifdef __cplusplus
