@@ -72,6 +72,13 @@ nbd_disconnect(nbd_state_t *sp)
 
 
 static int
+nbd_negotiate(nbd_state_t *sp)
+{
+	return (DDI_SUCCESS);
+}
+
+
+static int
 nbd_alloc_dev(int instance)
 {
 	int		rc = DDI_FAILURE;
