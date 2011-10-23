@@ -46,21 +46,21 @@ typedef struct {
 } client_init_t;
 
 
-typedef {
+typedef struct {
 	uint64_t	magic;
 	uint32_t	option;
 	uint32_t	optdatalen;
 } option_header_t;
 
 
-typedef {
+typedef struct {
 	uint64_t	export_size;
 	uint16_t	flags;
-	uint8_t		reserved[124]'
+	uint8_t		reserved[124];
 } option_reply_t;
 
 
-typedef {
+typedef struct {
 	uint32_t	magic;
 	uint32_t	type;
 	uint64_t	handle;
@@ -69,7 +69,7 @@ typedef {
 } nbd_request_t;
 
 
-typedef {
+typedef struct {
 	uint32_t	magic;
 	uint32_t	error;
 	uint64_t	handle;
